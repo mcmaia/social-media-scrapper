@@ -1,0 +1,11 @@
+config/
+.env
+venv/
+token.json
+teste.py
+__pycache__
+out
+source
+word_clouds.docx
+word_clouds.html
+documents
