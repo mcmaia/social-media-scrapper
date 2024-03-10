@@ -1,94 +1,94 @@
 import json
 import pandas as pd
-from models import Base #, InstagramPost, Comment  
-from database import engine, SessionLocal
-from sqlalchemy.orm import Session
+from database import engine
+from models import Base
+from competitors_mapping import client_1, client_2, client_3, client_4, client_qui, client_tai, client_tar, client_ypy
+
+import requests
+
+def ig_posts_to_sql(apify_dataset, apify_key):
+
+    oauth_url = f"https://api.apify.com/v2/datasets/{apify_dataset}/items?token={apify_key}"
+
+    # Set up the session
+    Base.metadata.create_all(bind=engine)
+    
+    res = requests.get(url=oauth_url)
+
+    # Write JSON data
+    with open("token.json", "w") as f:
+        f.write(json.dumps(res.json(), indent=4))
+
+    #Create data frame
+    df = pd.DataFrame(res.json())
+
+    # Renaming columns to ajst to standard
+    df.rename(columns={
+        'id': 'id_post',
+        'username': 'username',
+        'inputUrl': 'input_url',
+        'type': 'type',
+        'shortCode': 'short_code',
+        'caption': 'caption',
+        'url': 'url',
+        'commentsCount': 'comments_count',
+        'dimensionsHeight': 'dimensions_height',
+        'dimensionsWidth': 'dimensions_width',
+        'displayUrl': 'display_url',
+        'videoUrl': 'video_url',
+        'alt': 'alt',
+        'likesCount': 'likes_count',
+        'videoViewCount': 'video_view_count',
+        'videoPlayCount': 'video_play_count',
+        'timestamp': 'timestamp',
+        'locationName': 'location_name',
+        'locationId': 'location_id',
+        'ownerFullName': 'owner_full_name',
+        'ownerUsername': 'owner_username',
+        'ownerId': 'owner_id',
+        'productType': 'product_type',
+        'videoDuration': 'video_duration',
+        'isSponsored': 'is_sponsored',
+        'hashtags': 'hashtags',
+        'mentions': 'mentions',
+        'images': 'images',
+        'childPosts': 'child_posts',
+        'taggedUsers': 'tagged_users',
+        'musicInfo': 'music_info',
+        'coauthorProducers': 'coauthor_producers',
+        'latestComments': 'latest_comments',
+        'firstComment': 'first_comment',
+        'isPinned': 'is_pinned',
+        'error' : 'error'
+    }, 
+    inplace=True)
+
+    # Drop complex xolumns
+    df = df.drop(columns=['music_info', 'hashtags', 'mentions', 'images', 'child_posts', 'tagged_users', 'coauthor_producers', 'latest_comments', 'first_comment', 'is_pinned'])
 
 
+    # Each competitor of our clients
+    def determine_client(username):
+        username = str(username)
+        if username in client_ypy:
+            return client_1
+        elif username in client_tar:
+            return client_2
+        elif username in client_qui:
+            return client_3   
+        elif username in client_tai:
+            return client_4   
+        else:
+            return 'Other'  
 
-# Definir uma função auxiliar para verificar se um objeto é iterável
-def is_iterable(obj):
+        # Apply the function to the 'username' column to create a new 'client' column
+    df['client'] = df['owner_username'].apply(determine_client)
+
+    # Save ro CSV - For testing
+    df.to_csv('teste.csv', index=False)
+
     try:
-        iter(obj)
-        return not isinstance(obj, str)  # Excluir strings, que são iteráveis
-    except TypeError:
-        return False
-
-# Set up the session
-Base.metadata.create_all(bind=engine)
-
-# Load JSON data
-with open('source/novo.json', 'r', encoding='utf-8') as f: 
-    data = json.load(f)
-
-#Create data frame
-df = pd.DataFrame(data)
-
-df.rename(columns={
-    'id': 'id',
-    'inputUrl': 'inputurl',
-    'type': 'type',
-    'shortCode': 'shortcode',
-    'caption': 'caption',
-    'url': 'url',
-    'commentsCount': 'commentscount',
-    'dimensionsHeight': 'dimensionsheight',
-    'dimensionsWidth': 'dimensionswidth',
-    'displayUrl': 'displayurl',
-    'videoUrl': 'videourl',
-    'alt': 'alt',
-    'likesCount': 'likescount',
-    'videoViewCount': 'videoviewcount',
-    'videoPlayCount': 'videoplaycount',
-    'timestamp': 'timestamp',
-    'locationName': 'locationname',
-    'locationId': 'locationid',
-    'ownerFullName': 'ownerfullname',
-    'ownerUsername': 'ownerusername',
-    'ownerId': 'ownerid',
-    'productType': 'producttype',
-    'videoDuration': 'videoduration',
-    'isSponsored': 'issponsored',
-    'hashtags': 'hashtags',
-    'mentions': 'mentions',
-    'images': 'images',
-    'childPosts': 'childposts',
-    'taggedUsers': 'taggedusers',
-    'musicInfo': 'musicinfo',
-    'coauthorProducers': 'coauthorproducers',
-    'latestComments': 'latestcomments',
-    'firstComment': 'firstcomment',
-    'isPinned': 'ispinned'
-}, 
-inplace=True)
-
-df = df.drop(columns=['musicinfo', 'hashtags', 'mentions', 'images', 'childposts', 'taggedusers', 'coauthorproducers', 'latestcomments', 'firstcomment', 'ispinned'])
-
-# def insert_dataframe_to_db(df, engine):
-#     # Serialize columns that need to be in JSON format
-#     json_columns = ['musicinfo', 'hashtags', 'mentions', 'images', 'childposts', 'taggedusers', 'coauthorproducers']
-#     for col in json_columns:
-#         if col in df.columns:
-#             # Update the lambda function to handle iterables and None values properly
-#             df[col] = df[col].apply(lambda x: json.dumps(x) if not pd.isnull(x) and not isinstance(x, (list, dict)) else None)
-
-#     # Convert dataframe to list of dictionaries for insertion
-#     data_to_insert = df.to_dict(orient='records')
-
-#     # Insert data into the database
-#     with engine.connect() as connection:
-#         for record in data_to_insert:
-#             insert_statement = f"""
-#                 INSERT INTO public.instagram_posts_test ({', '.join(record.keys())})
-#                 VALUES ({', '.join(['%s']*len(record))})
-#                 ON CONFLICT (id) DO NOTHING;
-#             """
-#             connection.execute(insert_statement, list(record.values()))
-
-
-
-# Salvar para CSV (opcional)
-df.to_csv('teste.csv', index=False)
-# Inserir no banco de dados
-df.to_sql('instagram_posts_test', engine, if_exists='append', index=False)
-# insert_dataframe_to_db(df, engine)
+        df.to_sql('instagram_posts_test', engine, if_exists='append', index=False)
+        print("Data loaded successfully: 200")
+    except Exception as e:
+        print(f"Something went wrong: {e}")
