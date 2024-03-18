@@ -6,7 +6,6 @@ Base = declarative_base()
 
 class InstagramPost(Base):
     __tablename__ = 'instagram_posts_test'
-
     id = Column(String, primary_key=True)
     username = Column(String)
     id_post = Column(String)
@@ -35,6 +34,7 @@ class InstagramPost(Base):
     is_sponsored = Column(Boolean)
     error = Column(String, nullable=True)
     client = Column(String)
+    created_at = Column(String)
     # musicInfo = Column(JSON, nullable=True)
     # hashtags = Column(JSON)
     # mentions = Column(JSON)

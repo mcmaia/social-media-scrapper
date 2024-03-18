@@ -33,7 +33,7 @@ psql_table_df = pd.DataFrame(data)
 psql_table_df = psql_table_df.astype(str)
 
 # Call functions
-ig_posts_to_sql(APIFY_DATASET, MY_APIFY_TOKEN)
+# ig_posts_to_sql(APIFY_DATASET, MY_APIFY_TOKEN)
 post_to_bq(psql_table_df, BQ_DATA_SET, BQ_TABLE_ID, BQ_DATA_SET_LOCATION)
 
-ig_profiles_to_sql(PROFILE_DATASET, MY_APIFY_TOKEN)
+# ig_profiles_to_sql(PROFILE_DATASET, MY_APIFY_TOKEN)

@@ -1,5 +1,6 @@
 from competitors_mapping import client_1,client_2,client_3,client_4,client_qui,client_tai,client_tar,client_ypy
 
+from google.cloud.exceptions import NotFound
 import json
 import pandas as pd
 import requests
@@ -110,60 +111,22 @@ def post_to_bq(psql_table, bq_dataset_id, bq_table_id, bq_dataset_location):
     credentials = Credentials.from_service_account_file('config/gcp_credentials.json')
     client = bigquery.Client.from_service_account_json('config/gcp_credentials.json')
     
-
-    # Create a new dataset
+    # Create or get dataset
     dataset_id = bq_dataset_id
     dataset_ref = client.dataset(dataset_id)
-    dataset = bigquery.Dataset(dataset_ref)
-    dataset.location = bq_dataset_location
     try:
+        # Try to get the dataset, if it exists, this will succeed
+        dataset = client.get_dataset(dataset_ref)
+        print(f"Dataset {dataset_id} already exists, proceeding with existing dataset.")
+    except NotFound:
+        # If the dataset does not exist, create it
+        print(f"Dataset {dataset_id} does not exist, creating new dataset.")
+        dataset = bigquery.Dataset(dataset_ref)
+        dataset.location = bq_dataset_location
         dataset = client.create_dataset(dataset)
-    except Exception:
-        pass
+        print(f"Dataset {dataset_id} created.")
 
     table_id = bq_table_id
-    schema = [
-        bigquery.SchemaField("id", "STRING", mode="REQUIRED"),
-        bigquery.SchemaField("username", "STRING"),
-        bigquery.SchemaField("id_post", "STRING"),
-        bigquery.SchemaField("input_url", "STRING"),
-        bigquery.SchemaField("type", "STRING"),
-        bigquery.SchemaField("short_code", "STRING"),
-        bigquery.SchemaField("caption", "STRING"),
-        bigquery.SchemaField("url", "STRING"),
-        bigquery.SchemaField("comments_count", "INTEGER"),
-        bigquery.SchemaField("dimensions_height", "INTEGER"),
-        bigquery.SchemaField("dimensions_width", "INTEGER"),
-        bigquery.SchemaField("display_url", "STRING"),
-        bigquery.SchemaField("video_url", "STRING"),
-        bigquery.SchemaField("alt", "STRING"),
-        bigquery.SchemaField("likes_count", "INTEGER"),
-        bigquery.SchemaField("video_view_count", "INTEGER"),
-        bigquery.SchemaField("video_play_count", "INTEGER"),
-        bigquery.SchemaField("timestamp", "TIMESTAMP"),
-        bigquery.SchemaField("location_name", "STRING"),
-        bigquery.SchemaField("location_id", "STRING"),
-        bigquery.SchemaField("owner_full_name", "STRING"),
-        bigquery.SchemaField("owner_username", "STRING"),
-        bigquery.SchemaField("owner_id", "STRING"),
-        bigquery.SchemaField("product_type", "STRING"),
-        bigquery.SchemaField("video_duration", "FLOAT"),
-        bigquery.SchemaField("is_sponsored", "STRING"),
-        bigquery.SchemaField("error", "STRING"),
-        bigquery.SchemaField("client", "STRING"),
-        # For JSON fields, BigQuery supports the STRING type, but you could also use STRUCT or RECORD for more complex structures
-        # bigquery.SchemaField("musicInfo", "STRING"),
-        # bigquery.SchemaField("hashtags", "STRING"),
-        # bigquery.SchemaField("mentions", "STRING"),
-        # bigquery.SchemaField("images", "STRING"),
-        # bigquery.SchemaField("childPosts", "STRING"),
-        # bigquery.SchemaField("taggedUsers", "STRING"),
-        # bigquery.SchemaField("coauthorProducers", "STRING"),
-    ]
-    
-    table_ref = dataset_ref.table(table_id)
-    table = bigquery.Table(table_ref, schema=schema)
-
     try:
         pandas_gbq.to_gbq(psql_table,
                         destination_table=f"{dataset_id}.{table_id}",
