@@ -1,5 +1,3 @@
-from competitors_mapping import client_1,client_2,client_3,client_4,client_qui,client_tai,client_tar,client_ypy
-
 from google.cloud.exceptions import NotFound
 import json
 import pandas as pd
@@ -9,16 +7,21 @@ from google.oauth2.service_account import Credentials
 import pandas_gbq
 
 from database import engine
+import logging
 
+logger = logging.getLogger(__name__)
 
 def ig_posts_to_sql(apify_dataset, apify_key):
+    logger.info('Starting collecting API info')
 
     oauth_url = f"https://api.apify.com/v2/datasets/{apify_dataset}/items?token={apify_key}"
+    logger.info(f'api dataset {apify_dataset}')
 
     # # Set up the session
     # Base.metadata.create_all(bind=engine)
     
     res = requests.get(url=oauth_url)
+    logger.info(f'collecting data from API response: {res.status_code}')
 
     # Write JSON data
     with open("token.json", "w") as f:
@@ -26,6 +29,7 @@ def ig_posts_to_sql(apify_dataset, apify_key):
 
     #Create data frame
     df = pd.DataFrame(res.json())
+    logger.info(f'Created data frame')
 
     # Renaming columns to ajst to standard
     df.rename(columns={
@@ -67,6 +71,7 @@ def ig_posts_to_sql(apify_dataset, apify_key):
         'error' : 'error'
     }, 
     inplace=True)
+    logger.info('replacing coluumn name')
 
     try:
         # Columns to drop if they exist
@@ -78,6 +83,7 @@ def ig_posts_to_sql(apify_dataset, apify_key):
                 df = df.drop(columns=col)
     except Exception:
         pass
+
 
     # Each competitor of our clients
     def determine_client(username):
@@ -93,23 +99,28 @@ def ig_posts_to_sql(apify_dataset, apify_key):
         else:
             return 'Other'  
 
-        # Apply the function to the 'username' column to create a new 'client' column
+    # Apply the function to the 'username' column to create a new 'client' column
     df['client'] = df['owner_username'].apply(determine_client)
 
     # Save ro CSV - For testing
     df.to_csv('teste.csv', index=False)
+    logger.info('Creating CSV')
 
     try:
         df.to_sql('instagram_posts_test', engine, if_exists='append', index=False)
+        print(f"Dataset loaded: {apify_dataset}")
         print("Data loaded successfully to psql: 200")
+        logger.info('Data loaded successfully to psql')
     except Exception as e:
         print(f"Something went wrong sending data to psql: {e}")
 
 
 def post_to_bq(psql_table, bq_dataset_id, bq_table_id, bq_dataset_location):
+    logger.info('Dumpping data do BQ')
     
     credentials = Credentials.from_service_account_file('config/gcp_credentials.json')
     client = bigquery.Client.from_service_account_json('config/gcp_credentials.json')
+    logger.info('credentials and Client')
     
     # Create or get dataset
     dataset_id = bq_dataset_id
@@ -118,6 +129,7 @@ def post_to_bq(psql_table, bq_dataset_id, bq_table_id, bq_dataset_location):
         # Try to get the dataset, if it exists, this will succeed
         dataset = client.get_dataset(dataset_ref)
         print(f"Dataset {dataset_id} already exists, proceeding with existing dataset.")
+        logger.info('trying to create dataset')
     except NotFound:
         # If the dataset does not exist, create it
         print(f"Dataset {dataset_id} does not exist, creating new dataset.")
@@ -125,8 +137,10 @@ def post_to_bq(psql_table, bq_dataset_id, bq_table_id, bq_dataset_location):
         dataset.location = bq_dataset_location
         dataset = client.create_dataset(dataset)
         print(f"Dataset {dataset_id} created.")
+        logger.info('Dataset exists')
 
     table_id = bq_table_id
+    logger.info('Declair table')
     try:
         pandas_gbq.to_gbq(psql_table,
                         destination_table=f"{dataset_id}.{table_id}",
@@ -134,8 +148,10 @@ def post_to_bq(psql_table, bq_dataset_id, bq_table_id, bq_dataset_location):
                         if_exists='replace',
                         credentials=credentials)
         print("Data loaded successfully to BQ: 200")
+        logger.info('Data loaded successfully to BQ')
     except Exception as e:
         print(f"Something went wrong sending data to BQ: {e}")
+        logger.info('f"Something went wrong sending data to BQ: {e}')
     
        
 
