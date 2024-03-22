@@ -1,8 +1,8 @@
 from posts import ig_posts_to_sql, post_to_bq
-from profiles import ig_profiles_to_sql
+from profiles import ig_profiles_to_sql, profile_to_bq
 import pandas as pd
 from database import Base, SessionLocal, engine
-from models import InstagramPost
+from models import InstagramPost, InstagramProfile
 
 import os
 from dotenv import load_dotenv
@@ -12,28 +12,34 @@ load_dotenv()
 
 # Your environment variables
 MY_APIFY_TOKEN = os.getenv("MY_APIFY_TOKEN")
-APIFY_DATASET = os.getenv("APIFY_DATASET")
-BQ_DATA_SET = os.getenv("BQ_DATA_SET")
+APIFY_POSTS_DATASET = os.getenv("APIFY_POSTS_DATASET")
+BQ_POSTS_TABLE_ID = os.getenv("BQ_POSTS_TABLE_ID")
 BQ_DATA_SET_LOCATION = os.getenv("BQ_DATA_SET_LOCATION")
-BQ_TABLE_ID = os.getenv("BQ_TABLE_ID")
-PROFILE_DATASET = os.getenv("APIFY_PROFILE_DATASET")
+BQ_DATASET_ID = os.getenv("BQ_DATASET_ID")
+APIFY_PROFILE_DATASET = os.getenv("APIFY_PROFILE_DATASET")
+BQ_PROFILES_TABLE_ID = os.getenv("BQ_PROFILES_TABLE_ID")
 
 # Set up the session
 Base.metadata.create_all(bind=engine)
 session = SessionLocal()
 
 # Querying InstagramPost
-query_result = session.query(InstagramPost).all()
+posts_query_result = session.query(InstagramPost).all()
+profile_query_result = session.query(InstagramProfile).all()
 
 # Convert query results to a list of dictionaries
-data = [{key: getattr(post, key) for key in post.__dict__.keys() if not key.startswith('_')} for post in query_result]
+data = [{key: getattr(post, key) for key in post.__dict__.keys() if not key.startswith('_')} for post in posts_query_result]
 
 # Convert the list of dictionaries to a DataFrame
 psql_table_df = pd.DataFrame(data)
 psql_table_df = psql_table_df.astype(str)
 
-# Call functions
-ig_posts_to_sql(APIFY_DATASET, MY_APIFY_TOKEN)
-post_to_bq(psql_table_df, BQ_DATA_SET, BQ_TABLE_ID, BQ_DATA_SET_LOCATION)
+# Posts
+ig_posts_to_sql(APIFY_POSTS_DATASET, MY_APIFY_TOKEN)
+# def post_to_bq(psql_table, bq_dataset_id, bq_table_id, bq_dataset_location):
+post_to_bq(psql_table_df, BQ_DATASET_ID, BQ_POSTS_TABLE_ID, BQ_DATA_SET_LOCATION)
 
-ig_profiles_to_sql(PROFILE_DATASET, MY_APIFY_TOKEN)
+# Profiles 
+ig_profiles_to_sql(APIFY_PROFILE_DATASET, MY_APIFY_TOKEN)
+#def profile_to_bq(psql_profile_table, bq_dataset_id, bq_profile_table_id, bq_dataset_location):
+profile_to_bq(psql_table_df, BQ_DATASET_ID, BQ_PROFILES_TABLE_ID, BQ_DATA_SET_LOCATION)
