@@ -45,6 +45,36 @@ class InstagramPost(Base):
 
     # comments = relationship("Comment", backref="instagram_posts_test")
 
+class InstagramProfile(Base):
+    __tablename__ = 'instagram_profiles_test'
+
+    input_url = Column(String, primary_key=True)
+    id = Column(String)
+    username = Column(String)
+    url = Column(String)
+    full_name = Column(String)
+    biography = Column(String)
+    external_url = Column(String)
+    external_url_shimmed = Column(String)
+    followers_count = Column(Integer)
+    follows_count = Column(Integer)
+    has_channel = Column(Boolean)
+    highlight_reel_count = Column(Integer)
+    is_business_account = Column(Boolean)
+    joined_recently = Column(Boolean)
+    business_category_name = Column(String)
+    private = Column(Boolean)
+    verified = Column(Boolean)
+    profile_pic_url = Column(String)
+    profile_pic_url_hd = Column(String)
+    igtv_video_count = Column(Integer)
+    related_profiles = Column(String)  # Assuming this is a string representation of related profiles
+    latest_igtv_videos = Column(String)  # Assuming this is a string representation of latest IGTV videos
+    posts_count = Column(Integer)  # Renamed from `postsCount` to follow Python naming conventions
+    latest_posts = Column(String)  # Assuming this is a string representation of latest posts
+    error = Column(String)
+
+
 # class Comment(Base):
 #     __tablename__ = 'comments'
 
