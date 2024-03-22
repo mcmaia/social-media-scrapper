@@ -6,12 +6,11 @@ from models import InstagramPost
 
 import os
 from dotenv import load_dotenv
+import logging
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
-logging_client = logger.Client()
-logging_client.setup_logging()
 
 # Your environment variables
 MY_APIFY_TOKEN = os.getenv("MY_APIFY_TOKEN")
@@ -39,8 +38,9 @@ psql_table_df = psql_table_df.astype(str)
 logger.info(f'{psql_table_df} created')
 
 # Call functions
+#POSTS
 ig_posts_to_sql(APIFY_POSTS_DATASET, MY_APIFY_TOKEN)
 post_to_bq(psql_table_df, BQ_DATASET_ID, BQ_POSTS_TABLE_ID, BQ_DATA_SET_LOCATION)
-
+#PROFILES
 ig_profiles_to_sql(APIFY_PROFILE_DATASET, MY_APIFY_TOKEN)
 profile_to_bq(psql_table_df, BQ_DATASET_ID, BQ_PROFILES_TABLE_ID, BQ_DATA_SET_LOCATION)
