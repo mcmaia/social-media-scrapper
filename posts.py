@@ -123,7 +123,7 @@ def ig_posts_to_sql(apify_dataset, apify_key):
         print("Data POSTS loaded successfully to psql: 200")
         logger.info('Data POSTS loaded successfully to psql')
     except Exception as e:
-        print(f"Something went wrong sending data to psql: {e}")
+        print(f"Something went wrong sending data POSTS to psql: {e}")
         print(df.dtypes)
 
 

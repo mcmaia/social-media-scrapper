@@ -1,6 +1,4 @@
 from database import engine
-import models
-
 import logging
 import requests
 import json
@@ -10,6 +8,7 @@ from google.cloud.exceptions import NotFound
 from google.cloud import bigquery
 from google.oauth2.service_account import Credentials
 import pandas_gbq
+
 
 logger = logging.getLogger(__name__)
 
@@ -69,9 +68,9 @@ def ig_profiles_to_sql(apify_profile_dataset, apify_key):
 
     try:
         df.to_sql('instagram_profiles_test', engine, if_exists='append', index=False)
-        print("Data PROFILES loaded successfully: 200")
+        print("Data PROFILES loaded successfully to sql: 200")
     except Exception as e:
-        print(f"Something went wrong: {e}")
+        print(f"Something went wrong loading data PROFILES to SQL: {e}")
 
 
 def profile_to_bq(psql_profile_table, bq_dataset_id, bq_profile_table_id, bq_dataset_location):
@@ -107,7 +106,7 @@ def profile_to_bq(psql_profile_table, bq_dataset_id, bq_profile_table_id, bq_dat
                         if_exists='replace',
                         credentials=credentials)
         print("Data PROFILES loaded successfully to BQ: 200")
-        logger.info('Data POSTS loaded successfully to BQ')
+        logger.info('Data PROFILES loaded successfully to BQ')
     except Exception as e:
-        print(f"Something went wrong sending data POSTS to BQ: {e}")
+        print(f"Something went wrong sending data PROFILES to BQ: {e}")
         logger.info('f"Something went wrong sending data PROFILES to BQ: {e}')
