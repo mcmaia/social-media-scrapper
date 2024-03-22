@@ -6,6 +6,7 @@ from google.cloud import bigquery
 from google.oauth2.service_account import Credentials
 import pandas_gbq
 
+from competitors_mapping import determine_client
 from database import engine
 import logging
 
@@ -31,7 +32,7 @@ def ig_posts_to_sql(apify_dataset, apify_key):
     df = pd.DataFrame(res.json())
     logger.info(f'Created data frame')
 
-    # Renaming columns to ajst to standard
+   # Renaming columns to ajst to standard
     df.rename(columns={
         'id': 'id_post',
         'username': 'username',
@@ -68,14 +69,39 @@ def ig_posts_to_sql(apify_dataset, apify_key):
         'latestComments': 'latest_comments',
         'firstComment': 'first_comment',
         'isPinned': 'is_pinned',
-        'error' : 'error'
+        'error' : 'error',
+        'relatedProfiles' : 'related_profiles',
+        'latestIgtvVideos' : 'latest_igtv_videos',
+        'latestPosts' : 'latest_posts',
+        'fullName': 'full_name',
+        'biography': 'biography',
+        'externalUrl': 'external_url',
+        'externalUrlShimmed': 'external_url_shimmed',
+        'followersCount': 'followers_count',
+        'followsCount': 'follows_count',
+        'hasChannel': 'has_channel',
+        'highlightReelCount': 'highlight_reel_count',
+        'isBusinessAccount': 'is_business_account',
+        'joinedRecently': 'joined_recently',
+        'businessCategoryName': 'business_category_name',
+        'private': 'private',
+        'verified': 'verified',
+        'profilePicUrl': 'profile_pic_url',
+        'profilePicUrlHD': 'profile_pic_url_hd',
+        'facebookPage': 'facebook_page',
+        'igtvVideoCount': 'igtv_video_count',
+        'related_profiles': 'related_profiles',
+        'latest_igtv_videos': 'latest_igtv_videos',
+        'postsCount': 'posts_count',
+        'latest_posts': 'latest_posts'
     }, 
     inplace=True)
     logger.info('replacing coluumn name')
 
     try:
         # Columns to drop if they exist
-        columns_to_drop = ['music_info', 'hashtags', 'mentions', 'images', 'child_posts', 'tagged_users', 'coauthor_producers', 'latest_comments', 'first_comment', 'is_pinned']
+        columns_to_drop = ['music_info', 'hashtags', 'mentions', 'images', 'child_posts', 'tagged_users', 'coauthor_producers', 'latest_comments', 'first_comment', 'is_pinned', 'full_name', 'biography', 'external_url', 'external_url_shimmed', 'followers_count', 'follows_count', 'has_channel', 'highlight_reel_count', 'is_business_account', 'joined_recently', 'business_category_name', 'private', 'verified', 'profile_pic_url', 'profile_pic_url_hd', 'facebook_page', 'igtv_video_count', 'related_profiles', 'latest_igtv_videos', 'posts_count', 'latest_posts'
+        ]
         
         # Drop columns if they exist
         for col in columns_to_drop:
@@ -84,35 +110,22 @@ def ig_posts_to_sql(apify_dataset, apify_key):
     except Exception:
         pass
 
-
-    # Each competitor of our clients
-    def determine_client(username):
-        username = str(username)
-        if username in client_ypy:
-            return client_1
-        elif username in client_tar:
-            return client_2
-        elif username in client_qui:
-            return client_3   
-        elif username in client_tai:
-            return client_4   
-        else:
-            return 'Other'  
-
     # Apply the function to the 'username' column to create a new 'client' column
     df['client'] = df['owner_username'].apply(determine_client)
 
     # Save ro CSV - For testing
-    df.to_csv('teste.csv', index=False)
+    df.to_csv('teste_post.csv', index=False)
     logger.info('Creating CSV')
 
     try:
         df.to_sql('instagram_posts_test', engine, if_exists='append', index=False)
         print(f"Dataset loaded: {apify_dataset}")
-        print("Data loaded successfully to psql: 200")
-        logger.info('Data loaded successfully to psql')
+        print("Data POSTS loaded successfully to psql: 200")
+        logger.info('Data POSTS loaded successfully to psql')
     except Exception as e:
         print(f"Something went wrong sending data to psql: {e}")
+        print(df.dtypes)
+
 
 
 def post_to_bq(psql_table, bq_dataset_id, bq_table_id, bq_dataset_location):
@@ -121,6 +134,10 @@ def post_to_bq(psql_table, bq_dataset_id, bq_table_id, bq_dataset_location):
     credentials = Credentials.from_service_account_file('config/gcp_credentials.json')
     client = bigquery.Client.from_service_account_json('config/gcp_credentials.json')
     logger.info('credentials and Client')
+
+        # Diagnostic print statements
+    print("BQ Dataset ID:", bq_dataset_id)  # Check the actual value
+    print("Type of BQ Dataset ID:", type(bq_dataset_id))  # Check the type
     
     # Create or get dataset
     dataset_id = bq_dataset_id
@@ -147,11 +164,11 @@ def post_to_bq(psql_table, bq_dataset_id, bq_table_id, bq_dataset_location):
                         project_id='staging-voxis',
                         if_exists='replace',
                         credentials=credentials)
-        print("Data loaded successfully to BQ: 200")
-        logger.info('Data loaded successfully to BQ')
+        print("Data POSTS loaded successfully to BQ: 200")
+        logger.info('Data POSTS loaded successfully to BQ')
     except Exception as e:
-        print(f"Something went wrong sending data to BQ: {e}")
-        logger.info('f"Something went wrong sending data to BQ: {e}')
+        print(f"Something went wrong sending data POSTS to BQ: {e}")
+        logger.info('f"Something went wrong sending data POSTS to BQ: {e}')
     
        
 
