@@ -47,4 +47,4 @@ ig_posts_to_sql(APIFY_POSTS_DATASET, MY_APIFY_TOKEN)
 post_to_bq(psql_table_df, BQ_DATASET_ID, BQ_POSTS_TABLE_ID, BQ_DATA_SET_LOCATION)
 #PROFILES
 ig_profiles_to_sql(APIFY_PROFILE_DATASET, MY_APIFY_TOKEN)
-profile_to_bq(psql_table_df, BQ_DATASET_ID, BQ_PROFILES_TABLE_ID, BQ_DATA_SET_LOCATION>>>>>>> main
+profile_to_bq(psql_table_df, BQ_DATASET_ID, BQ_PROFILES_TABLE_ID, BQ_DATA_SET_LOCATION)
